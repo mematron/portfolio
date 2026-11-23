@@ -85,6 +85,13 @@
         color: var(--ink-2); text-decoration: none; border-radius: 6px;
       }
       .toplinks a:hover { color: var(--accent); background: var(--accent-soft); }
+      .toplinks button {
+        display: inline-flex; align-items: center; min-height: 36px;
+        padding: 4px 10px; font-size: 14px; font-weight: 600;
+        color: var(--ink-2); background: none; border: none; border-radius: 6px;
+        cursor: pointer; font-family: inherit;
+      }
+      .toplinks button:hover { color: var(--accent); background: var(--accent-soft); }
 
       /* Hero */
       .hero { padding: 44px 0 8px; }
@@ -285,7 +292,7 @@
           <a href="https://github.com/mematron" target="_blank" rel="noopener">GitHub</a>
           <a href="https://www.artstation.com/mematron" target="_blank" rel="noopener">ArtStation</a>
           <a href="https://linktr.ee/mematron" target="_blank" rel="noopener">Linktree</a>
-          <a href="mailto:jasongerman@protonmail.com">Email</a>
+          <button type="button" class="js-copy-email">Email</button>
         </nav>
       </div>
     </div>
@@ -307,7 +314,7 @@
 
         <div class="contact-row">
           <a class="btn primary" href="https://www.linkedin.com/in/mematron" target="_blank" rel="noopener">LinkedIn profile</a>
-          <a class="btn" href="mailto:jasongerman@protonmail.com">jasongerman@protonmail.com</a>
+          <button class="btn js-copy-email" type="button">Copy email</button>
           <a class="btn" href="#work">See the work</a>
         </div>
       </header>
@@ -500,9 +507,8 @@
           <a class="btn" href="https://github.com/mematron" target="_blank" rel="noopener">GitHub</a>
           <a class="btn" href="https://www.artstation.com/mematron" target="_blank" rel="noopener">ArtStation</a>
           <a class="btn" href="https://linktr.ee/mematron" target="_blank" rel="noopener">Linktree, all links</a>
-          <button class="btn" type="button" id="copyEmail">Copy email</button>
+          <button class="btn js-copy-email" type="button">Copy email</button>
         </div>
-        <p class="email-line"><a href="mailto:jasongerman@protonmail.com">jasongerman@protonmail.com</a><span class="copied" id="copiedNote" hidden>Copied</span></p>
       </div>
 
     </main>
@@ -516,37 +522,44 @@
 
     <script>
       (function () {
-        var btn = document.getElementById('copyEmail');
-        var note = document.getElementById('copiedNote');
-        var email = 'jasongerman@protonmail.com';
-        btn.addEventListener('click', function () {
-          function done() {
-            note.textContent = 'Copied';
-            note.hidden = false;
-            setTimeout(function () { note.hidden = true; }, 2200);
-          }
+        // The address is assembled from parts at click time so it never
+        // appears written out anywhere in the page.
+        function address() {
+          return 'jasongerman' + '@' + ['protonmail', 'com'].join('.');
+        }
+        function copyText(text, done) {
           function fallback() {
-            var range = document.createRange();
-            var link = document.querySelector('.email-line a');
-            range.selectNodeContents(link);
-            var sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
             var ok = false;
             try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-            sel.removeAllRanges();
-            if (ok) { done(); }
-            else {
-              note.textContent = 'Email is right here, tap it to write';
-              note.hidden = false;
-              setTimeout(function () { note.hidden = true; }, 3000);
-            }
+            document.body.removeChild(ta);
+            done(ok);
           }
           if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(email).then(done, fallback);
+            navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
           } else {
             fallback();
           }
+        }
+        var triggers = document.querySelectorAll('.js-copy-email');
+        Array.prototype.forEach.call(triggers, function (el) {
+          el.addEventListener('click', function () {
+            copyText(address(), function (ok) {
+              var original = el.getAttribute('data-label');
+              if (!original) {
+                original = el.textContent;
+                el.setAttribute('data-label', original);
+              }
+              el.textContent = ok ? 'Copied' : 'Copy failed';
+              setTimeout(function () { el.textContent = original; }, 2200);
+            });
+          });
         });
       })();
     </script>
